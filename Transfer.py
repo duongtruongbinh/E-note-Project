@@ -55,8 +55,3 @@ def count_file():
     # Get the most number of ".chk" file
     number_of_files = len(file_list)
     return number_of_files
-
-
-file_name = input("Enter file name: ")
-split_file(file_name)
-merge_file(file_name)
