@@ -3,7 +3,6 @@ import PySimpleGUI as sg
 import json
 
 
-
 sg.theme("DarkAmber")  # Add a touch of color
 # All the stuff inside your window.
 
@@ -11,41 +10,44 @@ PASSWORD_FORM = "Have at least six digits, at least one upper-case letter"
 
 
 def validate_name(name, password):
-    with open('User/User.json', 'r') as json_file:
+    with open("User/User.json", "r") as json_file:
         data = json.loads(json_file.read())
     length = len(data)
     i = 0
     while i < length:
-        if (data[i]['user_name'] == name):
+        if data[i]["user_name"] == name:
             return False
         i += 1
     return True
+
 
 def sign_up(name, password):
     if validate_name(name, password) == False:
         return False
     else:
         data = []
-        with open('User/User.json', 'r') as json_file:
+        with open("User/User.json", "r") as json_file:
             data = json.loads(json_file.read())
 
         data.append(dict([("user_name", name), ("password", password)]))
-        with open('User/User.json', 'w') as json_file:
+        with open("User/User.json", "w") as json_file:
             json.dump(data, json_file, indent=4)
         return True
 
+
 def sign_in(username, password):
-    with open('User/User.json', 'r') as json_file:
+    with open("User/User.json", "r") as json_file:
         data = json.loads(json_file.read())
     length = len(data)
     i = 0
     while i < length:
-        if (data[i]['user_name'] == username):
-            if (data[i]['password'] == password):
+        if data[i]["user_name"] == username:
+            if data[i]["password"] == password:
                 return True
             return False
         i += 1
     return False
+
 
 def LoginMenu():
 
@@ -63,6 +65,7 @@ def LoginMenu():
 
     return sg.Window("Login", layout, resizable=True)
 
+
 def SignUpMenu():
     layout = [
         [sg.Text("Username: ")],
@@ -77,6 +80,7 @@ def SignUpMenu():
     ]
 
     return sg.Window("Sign Up", layout, resizable=True)
+
 
 def Login():
     window = LoginMenu()
@@ -102,10 +106,13 @@ def Login():
 
             if sign_in(username, password):
                 sg.popup("Login Success")
-                break
+                return (True, username)
+
             else:
                 sg.popup("Login Failed")
-                break
+                window.close()
+                window = LoginMenu()
+                continue
 
         if event == "-Show-":
             if window["-Show-"].get_text() == "Show":
@@ -136,7 +143,10 @@ def Login():
             if sign_up(username, str(password_one)):
                 sg.popup("Sign Up Success")
                 break
+            else:
+                sg.popup("Sign Up Fail")
+                window.close()
+                window = SignUpMenu()
 
     window.close()
     return True
-

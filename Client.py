@@ -1,8 +1,4 @@
-from multiprocessing.sharedctypes import Value
-from operator import truediv
 import socket
-from sqlite3 import connect
-from turtle import back
 import LoginMenu
 import ApplicationMenu
 import PySimpleGUI as sg
@@ -52,18 +48,19 @@ def main():
     window = Connect()
 
     while True:
-        event, value = window.read()
+        event,value = window.read()
 
         if event == sg.WIN_CLOSED:
             window.close()
-            break           
+            break
 
         window.close()
         # If connect successfully go to login menu
-        if event=="-OK-":
-            if LoginMenu.Login() == True:
+        if event == "-OK-":
+            result, username = LoginMenu.Login()
+            if result == True:
                 # And go to E-note app
-                ApplicationMenu.Menu()
+                ApplicationMenu.Menu(username)
             break
 
 
