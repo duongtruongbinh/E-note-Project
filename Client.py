@@ -22,26 +22,6 @@ def Connect():
     return sg.Window("Connecting", layout)
 
 
-# try:
-#     msg = None
-#     while msg != "x":
-#         msg = input("[CLIENT]: ").encode(format)
-#         client.send(msg)
-#         if msg.decode(format) == "send 2":
-#             filename = input("Filename: ").encode(format)
-#             client.send(filename)
-#         else:
-#             msg = client.recv(1024).decode(format)
-#             print(f"[SERVER] {msg}")
-
-#     print("End chat")
-
-# except:
-#     print("Error")
-# finally:
-#     client.close()
-#     print("Client closed")
-
 
 def main():
     #   Connect to server
@@ -57,10 +37,10 @@ def main():
         window.close()
         # If connect successfully go to login menu
         if event == "-OK-":
-            result, username = LoginMenu.Login()
+            result, username = LoginMenu.Login(client)
             if result == True:
                 # And go to E-note app
-                ApplicationMenu.Menu(username)
+                ApplicationMenu.Menu(username,client)
             break
 
 

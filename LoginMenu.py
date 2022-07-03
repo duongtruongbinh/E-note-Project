@@ -1,52 +1,13 @@
-from operator import imod
+from socket import socket
 import PySimpleGUI as sg
 import json
 
+format = "utf8"
 
 sg.theme("DarkAmber")  # Add a touch of color
 # All the stuff inside your window.
 
 PASSWORD_FORM = "Have at least six digits, at least one upper-case letter"
-
-
-def validate_name(name, password):
-    with open("User/User.json", "r") as json_file:
-        data = json.loads(json_file.read())
-    length = len(data)
-    i = 0
-    while i < length:
-        if data[i]["user_name"] == name:
-            return False
-        i += 1
-    return True
-
-
-def sign_up(name, password):
-    if validate_name(name, password) == False:
-        return False
-    else:
-        data = []
-        with open("User/User.json", "r") as json_file:
-            data = json.loads(json_file.read())
-
-        data.append(dict([("user_name", name), ("password", password)]))
-        with open("User/User.json", "w") as json_file:
-            json.dump(data, json_file, indent=4)
-        return True
-
-
-def sign_in(username, password):
-    with open("User/User.json", "r") as json_file:
-        data = json.loads(json_file.read())
-    length = len(data)
-    i = 0
-    while i < length:
-        if data[i]["user_name"] == username:
-            if data[i]["password"] == password:
-                return True
-            return False
-        i += 1
-    return False
 
 
 def LoginMenu():
@@ -82,7 +43,7 @@ def SignUpMenu():
     return sg.Window("Sign Up", layout, resizable=True)
 
 
-def Login():
+def Login(conn: socket):
     window = LoginMenu()
 
     while True:
@@ -103,9 +64,19 @@ def Login():
                     value="Password is not in the correct format"
                 )
                 continue
+            
+            conn.send("SignIn".encode(format))
+            conn.recv(1024).decode(format)
+            # Send username and password to server
+            conn.send(username.encode(format))
+            conn.recv(1024).decode(format)
+            conn.send(password.encode(format))
+            conn.recv(1024).decode(format)
 
-            if sign_in(username, password):
+            # Server respond
+            if conn.recv(1024).decode(format) == "True":                
                 sg.popup("Login Success")
+                window.close()
                 return (True, username)
 
             else:
@@ -139,14 +110,26 @@ def Login():
             if password_one != password_two:
                 window["-Unmatch-"].update(visible=True)
                 continue
+            
 
-            if sign_up(username, str(password_one)):
+            conn.send("SignUp".encode(format))
+            conn.recv(1024).decode(format)
+            # Send username and password to server
+            conn.send(username.encode(format))
+            conn.recv(1024).decode(format)
+            conn.send(password_one.encode(format))
+            conn.recv(1024).decode(format)
+
+            # Server respond
+            if conn.recv(1024).decode(format) == "True":
                 sg.popup("Sign Up Success")
-                break
+                window.close()
+                return (True, username)
             else:
                 sg.popup("Sign Up Fail")
                 window.close()
                 window = SignUpMenu()
+
 
     window.close()
     return True

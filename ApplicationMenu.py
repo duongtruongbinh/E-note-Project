@@ -1,14 +1,30 @@
+import socket
 import PySimpleGUI as sg
 import Transfer as tf
 import os
 import LoginMenu
 
+format = "utf8"
 
-def MainMenu():
+
+def send_file(username,file_name):
+    tf.split_file(file_name)
+    #for i in range(count_file()):
+
+def MainMenu(username, conn: socket):
     sg.theme("DarkAmber")  # Add a touch of color
     # All the stuff inside your window.
 
-    list_of_file = ["File1", "File2", "File3"]
+   
+    list_of_file = []
+    while True:
+        file_name = conn.recv(1024).decode(format)
+        conn.send("x".encode(format))# Receive and send one by one
+        if file_name == "Stop":
+            break
+        else:
+            list_of_file.append(file_name)
+        
 
     note_layout = [
         [
@@ -76,11 +92,14 @@ def MainMenu():
     return sg.Window("E-Note", layout, resizable=True)
 
 
-def Menu(username):
-    window = MainMenu()
+def Menu(username, conn: socket):
+
+    
+    window = MainMenu(username, conn)
 
     # Initialize the value list for later use
     value = []
+
     while True:
         event, value = window.read()
         if event == sg.WIN_CLOSED or event == "Exit":
