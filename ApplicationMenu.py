@@ -13,8 +13,6 @@ client_path = os.getcwd()
 
 CHUNK_SIZE = 1024 * 10  # 10KB
 
-list_of_file = []
-
 
 def send_file(conn: socket, username, source_file_name):
     # Send username and filename to server
@@ -34,8 +32,21 @@ def send_file(conn: socket, username, source_file_name):
             conn.send(source_file.read(CHUNK_SIZE))
             conn.recv(1024).decode(format)
         conn.send("Stop".encode(format))
+        conn.recv(1024).decode(format)
 
     os.chdir("..")
+
+
+def receive_list_file(conn: socket):
+    list_of_file = []
+    while True:
+        file_name = conn.recv(1024).decode(format)
+        conn.send("x".encode(format))  # Receive and send one by one
+        if file_name == "Stop":
+            break
+        else:
+            list_of_file.append(file_name)
+    return list_of_file
 
 
 def MainMenu(username, conn: socket):
@@ -44,13 +55,7 @@ def MainMenu(username, conn: socket):
 
     # Server send list of files
 
-    while True:
-        file_name = conn.recv(1024).decode(format)
-        conn.send("x".encode(format))  # Receive and send one by one
-        if file_name == "Stop":
-            break
-        else:
-            list_of_file.append(file_name)
+    list_of_file = receive_list_file(conn)
 
     note_layout = [
         [
@@ -94,7 +99,7 @@ def MainMenu(username, conn: socket):
         [sg.Button("Download", key="-Download-", expand_x=True)],
     ]
 
-    upload_layout = layout = [
+    upload_layout = [
         [sg.Text("Select a file to upload:")],
         [sg.Input(expand_x=True, expand_y=True), sg.FileBrowse(key="-FileBrowse-")],
         [sg.Button("Upload", expand_x=True)],
@@ -138,7 +143,6 @@ def Menu(username, conn: socket):
             # Save the note to resource folder
             with open(f"Resource/{note_name}.txt", "w") as f:
                 f.write(note_text)
-            list_of_file.append(note_name)
 
             conn.send("Upload".encode(format))
             conn.recv(1024).decode(format)
@@ -147,6 +151,11 @@ def Menu(username, conn: socket):
 
             if conn.recv(1024).decode(format) == "Received":
                 sg.popup("Save file successfully")
+
+            list_of_file = receive_list_file(conn)
+            window["-FileList-"].update(values=list_of_file)
+            # window.close()
+            # window = MainMenu(username, conn)
 
         if event == "-Open-":
             # Show all the txt file in local and server
