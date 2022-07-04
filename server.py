@@ -1,15 +1,23 @@
+from posixpath import split, splitext
 import socket
 import threading
-
 import json
 import Transfer
 import os
 
+CHUNK_SIZE = 1024 * 10
+
+
+server_path = os.getcwd()
 
 format = "utf8"
 
 HOST = "127.0.0.1"
 PORT = 50007
+
+option_list = ["Disconnect", "Upload", "Download", "View"]
+
+username_list = []
 
 
 def sign_in(username, password):
@@ -54,9 +62,9 @@ def sign_up(name, password):
 
 def send_list_file(conn: socket, username):
     # Check folder exist if not create folder with username
-    if os.path.isdir(f"ServerResource/{username}") == False:
-        os.mkdir(f"{os.getcwd()}/ServerResource/{username}")
-    os.chdir(f"ServerResource/{username}")
+    if os.path.isdir(f"{server_path}\ServerResource\{username}") == False:
+        os.mkdir(f"{server_path}\ServerResource\{username}")
+    os.chdir(f"ServerResource\{username}")
 
     # List all file has been saved
     list_of_file = os.listdir()
@@ -68,6 +76,27 @@ def send_list_file(conn: socket, username):
         conn.send(i.encode(format))
         conn.recv(1024).decode(format)
     conn.send("Stop".encode(format))
+
+
+def receive_file(conn: socket):
+    # Receive username and filename from client
+    username = conn.recv(1024).decode(format)
+    temp1=conn.send("x".encode(format))
+    file_name = conn.recv(1024).decode(format)
+    temp2=conn.send("x".encode(format))
+
+    os.chdir(f"{server_path}\ServerResource\{username}")
+
+    # Write the data sent by client into file
+    with open(file_name, "wb") as f:
+        while True:
+            data = conn.recv(Transfer.CHUNK_SIZE)
+            conn.send("x".encode(format))
+            if data == "Stop":
+                break
+            f.write(data)
+
+    os.chdir(server_path)
 
 
 def handleClient(conn: socket, address, index):
@@ -82,6 +111,7 @@ def handleClient(conn: socket, address, index):
         while True:
             username = conn.recv(1024).decode(format)
             conn.send("x".encode(format))
+            
             if username == "SignIn" or username == "SignUp":
                 username = conn.recv(1024).decode(format)
                 conn.send("x".encode(format))
@@ -116,10 +146,33 @@ def handleClient(conn: socket, address, index):
     # Send list of files to client
     send_list_file(conn, username)
 
-    
+    while True:
+        option = conn.recv(1024).decode(format)
+        conn.send("x".encode(format))
+        if option == "Disconnect":
+            conn.close()
+            break
+        if option == "Upload":
+            receive_file(conn)
 
+            os.chdir(f"{os.getcwd()}/User")
+            # Save into file json
+            with open(f"{username}.json") as f:
+                temp_list = []
+                for i in os.listdir(f"{server_path}\ServerResource\{username}"):
+                    temp_list.append(
+                        dict(
+                            [
+                                ("name", i),
+                                ("id", {i.split(".")[0]}),
+                                # ("path", f"{os.getcwd()}/{i}"),
+                            ]
+                        )
+                    )
+                json.dump(temp_list, f, indent=4)
+            os.chdir(server_path)
 
-username_list = []
+            conn.send("Received".encode(format))
 
 
 def main():

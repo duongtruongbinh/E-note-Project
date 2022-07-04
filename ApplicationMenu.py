@@ -3,28 +3,54 @@ import PySimpleGUI as sg
 import Transfer as tf
 import os
 import LoginMenu
+from ctypes import windll
+
+windll.shcore.SetProcessDpiAwareness(1)
 
 format = "utf8"
 
+client_path = os.getcwd()
 
-def send_file(username,file_name):
-    tf.split_file(file_name)
-    #for i in range(count_file()):
+CHUNK_SIZE = 1024 * 10  # 10KB
+
+list_of_file = []
+
+
+def send_file(conn: socket, username, source_file_name):
+    # Send username and filename to server
+    conn.send(username.encode(format))
+    temp1 = conn.recv(1024).decode(format)
+    conn.send(source_file_name.encode(format))
+    temp2 = conn.recv(1024).decode(format)
+
+    os.chdir(client_path + "\Resource")
+
+    with open(source_file_name, "rb") as source_file:
+        file_size = os.path.getsize(source_file_name)
+        # +1 for the last chunk, if the file is divisible by CHUNK_SIZE, the last chunk will be empty
+        n = file_size // CHUNK_SIZE + 1
+
+        for i in range(n):
+            conn.send(source_file.read(CHUNK_SIZE))
+            conn.recv(1024).decode(format)
+        conn.send("Stop".encode(format))
+
+    os.chdir("..")
+
 
 def MainMenu(username, conn: socket):
     sg.theme("DarkAmber")  # Add a touch of color
     # All the stuff inside your window.
 
-   
-    list_of_file = []
+    # Server send list of files
+
     while True:
         file_name = conn.recv(1024).decode(format)
-        conn.send("x".encode(format))# Receive and send one by one
+        conn.send("x".encode(format))  # Receive and send one by one
         if file_name == "Stop":
             break
         else:
             list_of_file.append(file_name)
-        
 
     note_layout = [
         [
@@ -94,7 +120,6 @@ def MainMenu(username, conn: socket):
 
 def Menu(username, conn: socket):
 
-    
     window = MainMenu(username, conn)
 
     # Initialize the value list for later use
@@ -103,6 +128,7 @@ def Menu(username, conn: socket):
     while True:
         event, value = window.read()
         if event == sg.WIN_CLOSED or event == "Exit":
+            conn.send("Disconnect".encode(format))
             break
 
         if event == "-Save-":
@@ -112,10 +138,15 @@ def Menu(username, conn: socket):
             # Save the note to resource folder
             with open(f"Resource/{note_name}.txt", "w") as f:
                 f.write(note_text)
-            f.close()
-            # Update the list of notes
-            # list_of_file = .GetListOfNotes()
-            # window['-FileList-'].update(list_of_file)
+            list_of_file.append(note_name)
+
+            conn.send("Upload".encode(format))
+            conn.recv(1024).decode(format)
+
+            send_file(conn, username, f"{note_name}.txt")
+
+            if conn.recv(1024).decode(format) == "Received":
+                sg.popup("Save file successfully")
 
         if event == "-Open-":
             # Show all the txt file in local and server
