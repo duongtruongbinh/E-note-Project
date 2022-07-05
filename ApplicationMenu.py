@@ -1,9 +1,12 @@
+import asyncio
+from asyncio import subprocess
 import socket
 import PySimpleGUI as sg
 import Transfer as tf
 import os
 import LoginMenu
 from ctypes import windll
+import shutil
 
 windll.shcore.SetProcessDpiAwareness(1)
 
@@ -17,9 +20,9 @@ CHUNK_SIZE = 1024 * 10  # 10KB
 def send_file(conn: socket, username, source_file_name):
     # Send username and filename to server
     conn.send(username.encode(format))
-    temp1 = conn.recv(1024).decode(format)
+    conn.recv(1024).decode(format)
     conn.send(source_file_name.encode(format))
-    temp2 = conn.recv(1024).decode(format)
+    conn.recv(1024).decode(format)
 
     os.chdir(client_path + "\Resource")
 
@@ -35,6 +38,22 @@ def send_file(conn: socket, username, source_file_name):
         conn.recv(1024).decode(format)
 
     os.chdir("..")
+
+
+def receive_file(conn: socket, username, file_name):
+    # Send username and filename to server
+    conn.send(username.encode(format))
+    conn.recv(1024).decode(format)
+    conn.send(file_name.encode(format))
+    conn.recv(1024).decode(format)
+
+    with open(f"./Resource/{file_name}", "wb") as f:
+        while True:
+            data = conn.recv(CHUNK_SIZE)
+            conn.send("x".encode(format))
+            if data == b"Stop":
+                break
+            f.write(data)
 
 
 def receive_list_file(conn: socket):
@@ -61,7 +80,7 @@ def MainMenu(username, conn: socket):
         [
             sg.Input(
                 default_text="Untitled",
-                key="-Notename-",
+                key="-NoteName-",
                 enable_events=True,
                 expand_x=True,
             )
@@ -77,32 +96,35 @@ def MainMenu(username, conn: socket):
                 expand_x=True,
             )
         ],
-        [
-            sg.Button("Save", key="-Save-", expand_x=True),
-            sg.Button("Open", key="-Open-", expand_x=True),
-            sg.Button("Delete", key="-Delete-", expand_x=True),
-        ],
+        [sg.Button("Save", key="-Save-", expand_x=True)],
     ]
 
-    download_layout = [
-        [sg.Text("Select a file to download:")],
+    open_layout = [
+        [sg.Text("Select a file:")],
         [
             sg.Listbox(
                 values=list_of_file,
                 size=(30, 10),
                 key="-FileList-",
+                select_mode="single",
                 no_scrollbar=True,
                 expand_y=True,
                 expand_x=True,
             )
         ],
-        [sg.Button("Download", key="-Download-", expand_x=True)],
+        [
+            sg.Button("Download", key="-Download-", expand_x=True),
+            sg.Button("Open", key="-Open-", expand_x=True),
+        ],
     ]
 
     upload_layout = [
         [sg.Text("Select a file to upload:")],
-        [sg.Input(expand_x=True, expand_y=True), sg.FileBrowse(key="-FileBrowse-")],
-        [sg.Button("Upload", expand_x=True)],
+        [
+            sg.InputText(key="-FilePath-", expand_x=False, expand_y=False),
+            sg.FileBrowse(key="-FileBrowse-", initial_folder=client_path),
+        ],
+        [sg.Button("Upload", key="-Upload-", expand_x=True)],
     ]
 
     layout = [
@@ -110,7 +132,7 @@ def MainMenu(username, conn: socket):
             sg.TabGroup(
                 [
                     [sg.Tab("Note", note_layout)],
-                    [sg.Tab("Download", download_layout)],
+                    [sg.Tab("Open", open_layout)],
                     [sg.Tab("Upload", upload_layout)],
                 ],
                 key="-TabGroup-",
@@ -132,12 +154,11 @@ def Menu(username, conn: socket):
 
     while True:
         event, value = window.read()
-        if event == sg.WIN_CLOSED or event == "Exit":
-            conn.send("Disconnect".encode(format))
+        if event in (sg.WIN_CLOSED, "Exit"):
             break
 
         if event == "-Save-":
-            # Get the note name and node text
+            # Get the note name and note text
             note_name = window["-Notename-"].get()
             note_text = window["-Text-"].get()
             # Save the note to resource folder
@@ -149,31 +170,64 @@ def Menu(username, conn: socket):
 
             send_file(conn, username, f"{note_name}.txt")
 
+            # Server respond
             if conn.recv(1024).decode(format) == "Received":
                 sg.popup("Save file successfully")
 
+            # Update new list file
             list_of_file = receive_list_file(conn)
             window["-FileList-"].update(values=list_of_file)
-            # window.close()
-            # window = MainMenu(username, conn)
 
         if event == "-Open-":
-            # Show all the txt file in local and server
-            # list_of_file = .GetListOfNotes()
-            sg.popup("Open")
+            file_name = window["-FileList-"].get()[0]
+
+            conn.send("Download".encode(format))
+            conn.recv(1024).decode(format)
+
+            receive_file(conn, username, file_name)
+
+            # If the file is txt, open it in app window
+            if file_name.split(".")[1] == "txt":
+                window["-NoteName-"].update(file_name.split(".")[0])
+                with open(f"./Resource/{file_name}", "r") as f:
+                    data = f.read()
+                    window["-Text-"].update(data)
+            else:
+                cmd = f"./Resource/{file_name}"
+                subprocess.run(cmd, shell=True, stderr=True, stdout=True)
 
         if event == "-Download-":
-            # Tell server to send file to this client
-            file_name = window["-FileList-"].get()
-            tf.SendFile(file_name)
-            # Get the file from server
-            tf.ReceiveFile(file_name)
-            # Open the file
+            file_name = window["-FileList-"].get()[0]
+
+            conn.send("Download".encode(format))
+            conn.recv(1024).decode(format)
+
+            receive_file(conn, username, file_name)
+
+            # Server respond
+            if conn.recv(1024).decode(format) == "Sent":
+                sg.popup("Download File Successfully")
 
         if event == "-Upload-":
-            # Get the file name
-            file_name = window["-FileBrowse-"].get()
+            # Get the file path and file name
+            file_path = window["-FilePath-"].get()
+            file_name = file_path.split("/")[-1]
+
+            # Copy file to folder Resource
+            if os.path.isfile(f"./Resource/{file_name}") == False:
+                shutil.copyfile(file_path, f"./Resource/{file_name}")
+
+            conn.send("Upload".encode(format))
+            conn.recv(1024).decode(format)
             # Send the file to server
-            tf.SendFile(file_name)
-            # Get the file from server
+            send_file(conn, username, file_name)
+
+            # Server respond
+            if conn.recv(1024).decode(format) == "Received":
+                sg.popup("Save file successfully")
+
+            # Update new list file
+            list_of_file = receive_list_file(conn)
+            window["-FileList-"].update(values=list_of_file)
+
     window.close()

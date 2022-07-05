@@ -2,7 +2,6 @@ from posixpath import split, splitext
 import socket
 import threading
 import json
-import Transfer
 import os
 
 CHUNK_SIZE = 1024 * 10
@@ -15,7 +14,6 @@ format = "utf8"
 HOST = "127.0.0.1"
 PORT = 50007
 
-option_list = ["Disconnect", "Upload", "Download", "View"]
 
 username_list = []
 
@@ -91,14 +89,36 @@ def receive_file(conn: socket):
     # Write the data sent by client into file
     with open(file_name, "wb") as f:
         while True:
-            data = conn.recv(Transfer.CHUNK_SIZE)
+            data = conn.recv(CHUNK_SIZE)
             conn.send("x".encode(format))
             if data == b"Stop":
                 break
             f.write(data)
 
     os.chdir(server_path)
-    return file_name
+
+
+def send_file(conn: socket):
+    # Receive username and filename from client
+    username = conn.recv(1024).decode(format)
+    conn.send("x".encode(format))
+    file_name = conn.recv(1024).decode(format)
+    conn.send("x".encode(format))
+
+    os.chdir(f"./ServerResource/{username}")
+
+    with open(file_name, "rb") as source_file:
+        file_size = os.path.getsize(file_name)
+        # +1 for the last chunk, if the file is divisible by CHUNK_SIZE, the last chunk will be empty
+        n = file_size // CHUNK_SIZE + 1
+
+        for i in range(n):
+            conn.send(source_file.read(CHUNK_SIZE))
+            conn.recv(1024).decode(format)
+        conn.send("Stop".encode(format))
+        conn.recv(1024).decode(format)
+
+    os.chdir(server_path)
 
 
 def handleClient(conn: socket, address, index):
@@ -108,6 +128,10 @@ def handleClient(conn: socket, address, index):
     username = ""
     option = conn.recv(1024).decode(format)
     conn.send("x".encode(format))
+    if option == "Disconnect":
+        conn.close()
+        print(f"{conn} closed")
+        return
 
     if option == "SignIn":
         while True:
@@ -126,6 +150,7 @@ def handleClient(conn: socket, address, index):
                 break
             else:
                 conn.send("False".encode(format))
+
     else:
         while True:
             username = conn.recv(1024).decode(format)
@@ -149,36 +174,47 @@ def handleClient(conn: socket, address, index):
     send_list_file(conn, username)
 
     while True:
-        option = conn.recv(1024).decode(format)
+        event = conn.recv(1024).decode(format)
         conn.send("x".encode(format))
 
-        if option == "Disconnect":
+        if event == "Disconnect":
             conn.close()
+            print(f"{conn} closed")
             break
-        if option == "Upload":
+
+        if event == "Upload":
             receive_file(conn)
-            os.chdir(f"{os.getcwd()}/User")
+
             # Save into file json
             temp_list = []
-            with open(f"{username}.json") as f:
-                for i in os.listdir(f"{server_path}/ServerResource/{username}"):
-                    temp_list.append(
-                        dict(
-                            [
-                                ("name", i),
-                                ("id", i.split(".")[0]),
-                                ("path", f"{os.getcwd()}/{i}"),
-                            ]
-                        )
+
+            for i in os.listdir(f"{server_path}/ServerResource/{username}"):
+                temp_list.append(
+                    dict(
+                        [
+                            ("name", i),
+                            ("id", i.split(".")[0]),
+                            ("path", f"{os.getcwd()}/{i}"),
+                        ]
                     )
-            with open(f"{username}.json", "w") as f:
+                )
+            with open(f"./User/{username}.json", "w") as f:
                 json.dump(temp_list, f, indent=4)
 
-            os.chdir(server_path)
             # Respond to client
             conn.send("Received".encode(format))
 
+            # Update list file
             send_list_file(conn, username)
+
+        if event == "Download":
+            send_file(conn)
+
+            # Respond to client
+            conn.send("Sent".encode(format))
+
+        if event == "Open":
+            send_file(conn)
 
 
 def main():

@@ -49,9 +49,9 @@ def Login(conn: socket):
     while True:
         event, value = window.read()
 
-        if event == sg.WIN_CLOSED or event == "Cancel":
+        if event in (sg.WIN_CLOSED, "Cancel"):
             window.close()
-            return False
+            return (False, "")
 
         if event == "Login":
             username = window["-Username-"].get()
@@ -64,7 +64,7 @@ def Login(conn: socket):
                     value="Password is not in the correct format"
                 )
                 continue
-            
+
             conn.send("SignIn".encode(format))
             conn.recv(1024).decode(format)
             # Send username and password to server
@@ -74,15 +74,13 @@ def Login(conn: socket):
             conn.recv(1024).decode(format)
 
             # Server respond
-            if conn.recv(1024).decode(format) == "True":                
+            if conn.recv(1024).decode(format) == "True":
                 sg.popup("Login Success")
                 window.close()
                 return (True, username)
 
             else:
                 sg.popup("Login Failed")
-                window.close()
-                window = LoginMenu()
                 continue
 
         if event == "-Show-":
@@ -110,7 +108,6 @@ def Login(conn: socket):
             if password_one != password_two:
                 window["-Unmatch-"].update(visible=True)
                 continue
-            
 
             conn.send("SignUp".encode(format))
             conn.recv(1024).decode(format)
@@ -129,7 +126,6 @@ def Login(conn: socket):
                 sg.popup("Sign Up Fail")
                 window.close()
                 window = SignUpMenu()
-
 
     window.close()
     return True
