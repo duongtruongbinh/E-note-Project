@@ -1,5 +1,5 @@
 import sys
-from asyncio import subprocess
+import subprocess
 import socket
 import PySimpleGUI as sg
 import os
@@ -191,7 +191,7 @@ def Menu(username, conn: socket):
                     data = f.read()
                     window["-Text-"].update(data)
             else:
-                cmd = f"./Resource/{file_name}"
+                cmd = f"{os.getcwd()}/Resource/{file_name}"
                 subprocess.run(cmd, shell=True)
 
         if event == "-Download-":
