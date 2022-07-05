@@ -7,14 +7,16 @@ format = "utf8"
 sg.theme("DarkAmber")  # Add a touch of color
 # All the stuff inside your window.
 
-PASSWORD_FORM = "Have at least six digits, at least one upper-case letter"
+PASSWORD_FORM = "Have at least three characters"
+USERNAME_FORM = "Have at least five characters, a-z,0-9"
 
 
 def LoginMenu():
 
     layout = [
         [sg.Text("Username: ")],
-        [sg.InputText(key="-Username-")],
+        [sg.Text("Wrong Syntax Username", visible=False, key="-WrongUsername-")],
+        [sg.InputText(key="-Username-", tooltip=USERNAME_FORM)],
         [sg.Text("Password: ")],
         [sg.Text("Wrong Password", visible=False, key="-WrongPassword-")],
         [
@@ -30,7 +32,8 @@ def LoginMenu():
 def SignUpMenu():
     layout = [
         [sg.Text("Username: ")],
-        [sg.InputText(key="-Username-")],
+        [sg.Text(USERNAME_FORM, visible=False, key="-WrongUsername-")],
+        [sg.InputText(key="-Username-", tooltip=USERNAME_FORM)],
         [sg.Text("Password: ")],
         [sg.Text(f"{PASSWORD_FORM}", visible=False, key="-WrongPassword-")],
         [sg.InputText(key="-Password1-", password_char="*", tooltip=PASSWORD_FORM)],
@@ -57,13 +60,27 @@ def Login(conn: socket):
             username = window["-Username-"].get()
             password = window["-Password-"].get()
 
+            # Check username is in the correct format
+            if len(username) < 5 or not all(
+                (ord(c) >= 97 and ord(c) <= 122) or (ord(c) >= 48 and ord(c) <= 57)
+                for c in username
+            ):
+                window["-WrongUsername-"].update(
+                    visible=True, value="Username is not in the correct format"
+                )
+                continue
+            else:
+                window["-WrongUsername-"].update(visible=False)
+
             # Check password is in the correct format
-            if len(password) < 6 or not any(c.isupper() for c in password):
+            if len(password) < 3:
                 window["-WrongPassword-"].update(visible=True)
                 window["-WrongPassword-"].update(
                     value="Password is not in the correct format"
                 )
                 continue
+            else:
+                window["-WrongPassword-"].update(visible=False)
 
             conn.send("SignIn".encode(format))
             conn.recv(1024).decode(format)
@@ -99,9 +116,23 @@ def Login(conn: socket):
             username = window["-Username-"].get()
             password_one = window["-Password1-"].get()
 
-            if len(password_one) < 6 or not any(c.isupper() for c in password_one):
-                window["-WrongPassword-"].update(visible=True)
+            # Check username is in the correct format
+            if len(username) < 5 or not all(
+                (ord(c) >= 97 and ord(c) <= 122) or (ord(c) >= 48 and ord(c) <= 57)
+                for c in username
+            ):
+                window["-WrongUsername-"].update(visible=True, value=USERNAME_FORM)
                 continue
+            else:
+                window["-WrongPassword-"].update(visible=False)
+
+            # Check password is in the correct format
+            if len(password_one) < 3:
+                window["-WrongPassword-"].update(visible=True)
+                window["-WrongPassword-"].update(value=PASSWORD_FORM)
+                continue
+            else:
+                window["-WrongUsername-"].update(visible=False)
 
             password_two = window["-Password2-"].get()
 

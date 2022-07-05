@@ -1,10 +1,8 @@
-import asyncio
+import sys
 from asyncio import subprocess
 import socket
 import PySimpleGUI as sg
-import Transfer as tf
 import os
-import LoginMenu
 from ctypes import windll
 import shutil
 
@@ -194,7 +192,7 @@ def Menu(username, conn: socket):
                     window["-Text-"].update(data)
             else:
                 cmd = f"./Resource/{file_name}"
-                subprocess.run(cmd, shell=True, stderr=True, stdout=True)
+                subprocess.run(cmd, shell=True)
 
         if event == "-Download-":
             file_name = window["-FileList-"].get()[0]
