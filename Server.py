@@ -1,3 +1,4 @@
+from multiprocessing import RLock
 from posixpath import split, splitext
 import socket
 import threading
@@ -16,6 +17,8 @@ PORT = 50007
 
 
 username_list = []
+
+thread_list = []
 
 
 def sign_in(username, password):
@@ -123,7 +126,8 @@ def send_file(conn: socket):
 
 def handleClient(conn: socket, address, index):
     print(f"[NEW CONNECTION] {address} connected.")
-
+    lock=RLock()
+    lock.acquire()
     # Verify login and sign up
     username = ""
     option = conn.recv(1024).decode(format)
@@ -215,6 +219,7 @@ def handleClient(conn: socket, address, index):
 
         if event == "Open":
             send_file(conn)
+    lock.release()
 
 
 def main():
@@ -229,12 +234,19 @@ def main():
 
     while countClient < 5:
         conn, address = s.accept()
-        thr = threading.Thread(target=handleClient, args=(conn, address, countClient))
+
+        
+        thr = threading.Thread(target=handleClient, args=(conn, address, countClient))        
+        thread_list.append(thr)
+
+        
         thr.start()
 
         print(f"[ACTIVE CONNECTIONS] {threading.active_count()-1}")
 
         countClient += 1
+    for i in thread_list:
+        i.join()
 
     print("Server closed")
     # input()
