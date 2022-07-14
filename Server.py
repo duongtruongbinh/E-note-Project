@@ -12,7 +12,7 @@ server_path = os.getcwd()
 
 format = "utf8"
 
-HOST = "127.0.0.1"
+HOST = "10.123.0.91"
 PORT = 50007
 
 
@@ -69,8 +69,7 @@ def send_list_file(conn: socket, username):
 
     # List all file has been saved
     list_of_file = os.listdir()
-    os.chdir("..")
-    os.chdir("..")
+    os.chdir(server_path)
 
     # Send list file to client
     for i in list_of_file:
@@ -126,8 +125,8 @@ def send_file(conn: socket):
 
 def handleClient(conn: socket, address, index):
     print(f"[NEW CONNECTION] {address} connected.")
-    lock=RLock()
-    lock.acquire()
+    lock = RLock()
+    
     # Verify login and sign up
     username = ""
     option = conn.recv(1024).decode(format)
@@ -154,6 +153,7 @@ def handleClient(conn: socket, address, index):
                 break
             else:
                 conn.send("False".encode(format))
+            conn.recv(1024).decode(format)
 
     else:
         while True:
@@ -171,6 +171,7 @@ def handleClient(conn: socket, address, index):
                 break
             else:
                 conn.send("False".encode(format))
+            conn.recv(1024).decode(format)
 
     username_list.append(username)
 
@@ -219,7 +220,7 @@ def handleClient(conn: socket, address, index):
 
         if event == "Open":
             send_file(conn)
-    lock.release()
+    
 
 
 def main():
@@ -235,11 +236,9 @@ def main():
     while countClient < 5:
         conn, address = s.accept()
 
-        
-        thr = threading.Thread(target=handleClient, args=(conn, address, countClient))        
+        thr = threading.Thread(target=handleClient, args=(conn, address, countClient))
         thread_list.append(thr)
 
-        
         thr.start()
 
         print(f"[ACTIVE CONNECTIONS] {threading.active_count()-1}")

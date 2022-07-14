@@ -91,7 +91,10 @@ def Login(conn: socket):
             conn.recv(1024).decode(format)
 
             # Server respond
-            if conn.recv(1024).decode(format) == "True":
+            validation = conn.recv(1024).decode(format)
+            conn.send("x".encode(format))
+
+            if validation == "True":
                 sg.popup("Login Success")
                 window.close()
                 return (True, username)
@@ -149,7 +152,9 @@ def Login(conn: socket):
             conn.recv(1024).decode(format)
 
             # Server respond
-            if conn.recv(1024).decode(format) == "True":
+            validation = conn.recv(1024).decode(format)
+            conn.send("x".encode(format))
+            if validation == "True":
                 sg.popup("Sign Up Success")
                 window.close()
                 return (True, username)
