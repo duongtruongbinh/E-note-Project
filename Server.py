@@ -30,7 +30,8 @@ def sign_in(username, password):
         if data[i]["user_name"] == username:
             if data[i]["password"] == password:
                 return True
-            return False
+            else:
+                return False
         i += 1
     return False
 
@@ -126,7 +127,7 @@ def send_file(conn: socket):
 def handleClient(conn: socket, address, index):
     print(f"[NEW CONNECTION] {address} connected.")
     lock = RLock()
-    
+
     # Verify login and sign up
     username = ""
     option = conn.recv(1024).decode(format)
@@ -150,10 +151,11 @@ def handleClient(conn: socket, address, index):
             # Check sign in and respond
             if sign_in(username, password):
                 conn.send("True".encode(format))
+                conn.recv(1024).decode(format)
                 break
             else:
                 conn.send("False".encode(format))
-            conn.recv(1024).decode(format)
+                conn.recv(1024).decode(format)
 
     else:
         while True:
@@ -168,10 +170,11 @@ def handleClient(conn: socket, address, index):
             # Check sign up and respond
             if sign_up(username, password):
                 conn.send("True".encode(format))
+                conn.recv(1024).decode(format)
                 break
             else:
                 conn.send("False".encode(format))
-            conn.recv(1024).decode(format)
+                conn.recv(1024).decode(format)
 
     username_list.append(username)
 
@@ -208,6 +211,7 @@ def handleClient(conn: socket, address, index):
 
             # Respond to client
             conn.send("Received".encode(format))
+            conn.recv(1024).decode(format)
 
             # Update list file
             send_list_file(conn, username)
@@ -217,10 +221,10 @@ def handleClient(conn: socket, address, index):
 
             # Respond to client
             conn.send("Sent".encode(format))
+            conn.recv(1024).decode(format)
 
         if event == "Open":
             send_file(conn)
-    
 
 
 def main():
@@ -248,7 +252,7 @@ def main():
         i.join()
 
     print("Server closed")
-    # input()
+    
     s.close()
 
 

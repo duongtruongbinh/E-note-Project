@@ -185,6 +185,8 @@ def Menu(username, conn: socket):
             receive_file(conn, username, file_name)
 
             # If the file is txt, open it in app window
+            validation = conn.recv(1024).decode(format)
+            conn.send("x".encode(format))
             if file_name.split(".")[1] == "txt":
                 window["-NoteName-"].update(file_name.split(".")[0])
                 with open(f"./Resource/{file_name}", "r") as f:
@@ -203,7 +205,9 @@ def Menu(username, conn: socket):
             receive_file(conn, username, file_name)
 
             # Server respond
-            if conn.recv(1024).decode(format) == "Sent":
+            validation = conn.recv(1024).decode(format)
+            conn.send("x".encode(format))
+            if validation == "Sent":
                 sg.popup("Download File Successfully")
 
         if event == "-Upload-":
@@ -221,8 +225,10 @@ def Menu(username, conn: socket):
             send_file(conn, username, file_name)
 
             # Server respond
-            if conn.recv(1024).decode(format) == "Received":
-                sg.popup("Save file successfully")
+            conn.recv(1024).decode(format)
+            conn.send("x".encode(format))
+
+            sg.popup("Save file successfully")
 
             # Update new list file
             list_of_file = receive_list_file(conn)
