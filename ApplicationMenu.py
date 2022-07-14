@@ -157,7 +157,7 @@ def Menu(username, conn: socket):
 
         if event == "-Save-":
             # Get the note name and note text
-            note_name = window["-Notename-"].get()
+            note_name = window["-NoteName-"].get()
             note_text = window["-Text-"].get()
             # Save the note to resource folder
             with open(f"Resource/{note_name}.txt", "w") as f:
@@ -216,13 +216,18 @@ def Menu(username, conn: socket):
             file_name = file_path.split("/")[-1]
 
             # Copy file to folder Resource
-            if os.path.isfile(f"./Resource/{file_name}") == False:
-                shutil.copyfile(file_path, f"./Resource/{file_name}")
+            delete = True
+            if os.path.exists(file_path, f"./Resource/{file_name}"):
+                delete = False
+            shutil.copyfile(file_path, f"./Resource/{file_name}")
 
             conn.send("Upload".encode(format))
             conn.recv(1024).decode(format)
             # Send the file to server
             send_file(conn, username, file_name)
+
+            if delete == True:
+                os.remove(f"./Resource/{file_name}")
 
             # Server respond
             conn.recv(1024).decode(format)
