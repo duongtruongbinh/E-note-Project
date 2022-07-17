@@ -152,7 +152,7 @@ def Menu(username, conn: socket):
 
     while True:
         event, value = window.read()
-        if event in (sg.WIN_CLOSED, "Exit"):
+        if event == sg.WIN_CLOSED:
             break
 
         if event == "-Save-":
@@ -217,7 +217,7 @@ def Menu(username, conn: socket):
 
             # Copy file to folder Resource
             delete = True
-            if os.path.exists(file_path, f"./Resource/{file_name}"):
+            if os.path.exists(f"./Resource/{file_name}"):
                 delete = False
             shutil.copyfile(file_path, f"./Resource/{file_name}")
 
