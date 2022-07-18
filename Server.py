@@ -221,8 +221,7 @@ def handleClient(conn: socket, address, index):
 
             # Respond to client
             conn.send("Received".encode(format))
-            conn.recv(1024).decode(format)
-
+            
             # Update list file
             send_list_file(conn, username)
 
