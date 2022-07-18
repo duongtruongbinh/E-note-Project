@@ -4,6 +4,7 @@ import socket
 import threading
 import json
 import os
+import time
 
 CHUNK_SIZE = 1024 * 10
 
@@ -12,7 +13,7 @@ server_path = os.getcwd()
 
 format = "utf8"
 
-HOST = "127.0.0.1"
+HOST = "10.126.2.104"
 PORT = 50007
 
 
@@ -120,6 +121,8 @@ def send_file(conn: socket):
     # Get file size and send to server
     file_size = os.path.getsize(file_name)
     conn.send(str(file_size).encode(format))
+
+    time.sleep(0.5)
 
     with open(file_name, "rb") as source_file:
         file_size = os.path.getsize(file_name)

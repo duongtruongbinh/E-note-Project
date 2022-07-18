@@ -4,6 +4,7 @@ import PySimpleGUI as sg
 import os
 from ctypes import windll
 import shutil
+import time
 
 windll.shcore.SetProcessDpiAwareness(1)
 
@@ -25,6 +26,8 @@ def send_file(conn: socket, username, source_file_name):
     # Get file size and send it to server
     file_size = os.path.getsize(source_file_name)
     conn.send(str(file_size).encode(format))
+
+    time.sleep(0.5)
 
     with open(source_file_name, "rb") as source_file:
         file_size = os.path.getsize(source_file_name)
