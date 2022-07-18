@@ -12,7 +12,7 @@ server_path = os.getcwd()
 
 format = "utf8"
 
-HOST = "10.123.0.91"
+HOST = "127.0.0.1"
 PORT = 50007
 
 
@@ -82,33 +82,44 @@ def send_list_file(conn: socket, username):
 
 def receive_file(conn: socket):
     # Receive username and filename from client
-    username = conn.recv(1024).decode(format)
-    conn.send("x".encode(format))
-    file_name = conn.recv(1024).decode(format)
-    conn.send("x".encode(format))
+    str = conn.recv(1024).decode(format)
+    conn.send("Received USERNAME and FILE_NAME".encode(format))
+
+    username = str.split(":")[0]
+    file_name = str.split(":")[1]
+
+    file_size = conn.recv(1024).decode(format)
+    file_size = int(file_size)
 
     os.chdir(f"{server_path}\ServerResource\{username}")
+
+    curr_size = 0
 
     # Write the data sent by client into file
     with open(file_name, "wb") as f:
         while True:
             data = conn.recv(CHUNK_SIZE)
-            conn.send("x".encode(format))
-            if data == b"Stop":
-                break
             f.write(data)
+            curr_size += len(data)
+            if curr_size >= file_size:
+                break
 
     os.chdir(server_path)
 
 
 def send_file(conn: socket):
     # Receive username and filename from client
-    username = conn.recv(1024).decode(format)
-    conn.send("x".encode(format))
-    file_name = conn.recv(1024).decode(format)
-    conn.send("x".encode(format))
+    mess = conn.recv(1024).decode(format)
+    conn.send("Received USERNAME and FILE_NAME".encode(format))
+
+    username = mess.split(":")[0]
+    file_name = mess.split(":")[1]
 
     os.chdir(f"./ServerResource/{username}")
+
+    # Get file size and send to server
+    file_size = os.path.getsize(file_name)
+    conn.send(str(file_size).encode(format))
 
     with open(file_name, "rb") as source_file:
         file_size = os.path.getsize(file_name)
@@ -117,9 +128,6 @@ def send_file(conn: socket):
 
         for i in range(n):
             conn.send(source_file.read(CHUNK_SIZE))
-            conn.recv(1024).decode(format)
-        conn.send("Stop".encode(format))
-        conn.recv(1024).decode(format)
 
     os.chdir(server_path)
 
@@ -220,8 +228,8 @@ def handleClient(conn: socket, address, index):
             send_file(conn)
 
             # Respond to client
-            conn.send("Sent".encode(format))
-            conn.recv(1024).decode(format)
+            # conn.send("Sent".encode(format))
+            # conn.recv(1024).decode(format)
 
         if event == "Open":
             send_file(conn)
@@ -240,7 +248,8 @@ def main():
     while countClient < 5:
         conn, address = s.accept()
 
-        thr = threading.Thread(target=handleClient, args=(conn, address, countClient))
+        thr = threading.Thread(target=handleClient,
+                               args=(conn, address, countClient))
         thread_list.append(thr)
 
         thr.start()
@@ -252,7 +261,7 @@ def main():
         i.join()
 
     print("Server closed")
-    
+
     s.close()
 
 

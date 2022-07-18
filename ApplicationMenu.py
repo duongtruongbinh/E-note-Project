@@ -1,4 +1,3 @@
-import sys
 import subprocess
 import socket
 import PySimpleGUI as sg
@@ -17,12 +16,15 @@ CHUNK_SIZE = 1024 * 10  # 10KB
 
 def send_file(conn: socket, username, source_file_name):
     # Send username and filename to server
-    conn.send(username.encode(format))
-    conn.recv(1024).decode(format)
-    conn.send(source_file_name.encode(format))
+    mess = username + ":" + source_file_name
+    conn.send(mess.encode(format))
     conn.recv(1024).decode(format)
 
     os.chdir(client_path + "\Resource")
+
+    # Get file size and send it to server
+    file_size = os.path.getsize(source_file_name)
+    conn.send(str(file_size).encode(format))
 
     with open(source_file_name, "rb") as source_file:
         file_size = os.path.getsize(source_file_name)
@@ -31,27 +33,28 @@ def send_file(conn: socket, username, source_file_name):
 
         for i in range(n):
             conn.send(source_file.read(CHUNK_SIZE))
-            conn.recv(1024).decode(format)
-        conn.send("Stop".encode(format))
-        conn.recv(1024).decode(format)
 
     os.chdir("..")
 
 
 def receive_file(conn: socket, username, file_name):
     # Send username and filename to server
-    conn.send(username.encode(format))
+    mess = username + ":" + file_name
+    conn.send(mess.encode(format))
     conn.recv(1024).decode(format)
-    conn.send(file_name.encode(format))
-    conn.recv(1024).decode(format)
+
+    file_size = conn.recv(1024).decode(format)
+    file_size = int(file_size)
+
+    curr_size = 0   # Current size of file
 
     with open(f"./Resource/{file_name}", "wb") as f:
         while True:
             data = conn.recv(CHUNK_SIZE)
-            conn.send("x".encode(format))
-            if data == b"Stop":
-                break
             f.write(data)
+            curr_size += len(data)
+            if curr_size >= file_size:
+                break
 
 
 def receive_list_file(conn: socket):
@@ -185,8 +188,8 @@ def Menu(username, conn: socket):
             receive_file(conn, username, file_name)
 
             # If the file is txt, open it in app window
-            validation = conn.recv(1024).decode(format)
-            conn.send("x".encode(format))
+            # validation = conn.recv(1024).decode(format)
+            # conn.send("x".encode(format))
             if file_name.split(".")[1] == "txt":
                 window["-NoteName-"].update(file_name.split(".")[0])
                 with open(f"./Resource/{file_name}", "r") as f:
