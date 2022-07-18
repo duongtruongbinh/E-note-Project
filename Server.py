@@ -4,7 +4,6 @@ import socket
 import threading
 import json
 import os
-import time
 
 CHUNK_SIZE = 1024 * 10
 
@@ -121,8 +120,8 @@ def send_file(conn: socket):
     # Get file size and send to server
     file_size = os.path.getsize(file_name)
     conn.send(str(file_size).encode(format))
+    conn.recv(1024).decode(format)
 
-    time.sleep(0.5)
 
     with open(file_name, "rb") as source_file:
         file_size = os.path.getsize(file_name)

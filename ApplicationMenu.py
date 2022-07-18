@@ -4,7 +4,6 @@ import PySimpleGUI as sg
 import os
 from ctypes import windll
 import shutil
-import time
 
 windll.shcore.SetProcessDpiAwareness(1)
 
@@ -27,8 +26,6 @@ def send_file(conn: socket, username, source_file_name):
     file_size = os.path.getsize(source_file_name)
     conn.send(str(file_size).encode(format))
 
-    time.sleep(0.5)
-
     with open(source_file_name, "rb") as source_file:
         file_size = os.path.getsize(source_file_name)
         # +1 for the last chunk, if the file is divisible by CHUNK_SIZE, the last chunk will be empty
@@ -48,6 +45,7 @@ def receive_file(conn: socket, username, file_name):
 
     file_size = conn.recv(1024).decode(format)
     file_size = int(file_size)
+    conn.send("Received FILE_SIZE".encode(format))
 
     curr_size = 0   # Current size of file
 
@@ -211,10 +209,10 @@ def Menu(username, conn: socket):
             receive_file(conn, username, file_name)
 
             # Server respond
-            validation = conn.recv(1024).decode(format)
-            conn.send("x".encode(format))
-            if validation == "Sent":
-                sg.popup("Download File Successfully")
+            # validation = conn.recv(1024).decode(format)
+            # conn.send("x".encode(format))
+            # if validation == "Sent":
+            #     sg.popup("Download File Successfully")
 
         if event == "-Upload-":
             # Get the file path and file name
