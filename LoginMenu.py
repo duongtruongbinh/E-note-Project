@@ -32,7 +32,7 @@ def LoginMenu():
 def SignUpMenu():
     layout = [
         [sg.Text("Username: ")],
-        [sg.Text(USERNAME_FORM, visible=False, key="-WrongUsername-")],
+        [sg.Text(USERNAME_FORM, visible=False, key="-WrongU  sername-")],
         [sg.InputText(key="-Username-", tooltip=USERNAME_FORM)],
         [sg.Text("Password: ")],
         [sg.Text(f"{PASSWORD_FORM}", visible=False, key="-WrongPassword-")],

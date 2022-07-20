@@ -5,11 +5,11 @@ import os
 from ctypes import windll
 import shutil
 
-windll.shcore.SetProcessDpiAwareness(1)
+windll.shcore.SetProcessDpiAwareness(1) #cho phep dieu chinh font chu
 
 format = "utf8"
 
-client_path = os.getcwd()
+client_path = os.getcwd() # returns current working directory of a process.
 
 CHUNK_SIZE = 1024 * 10  # 10KB
 
@@ -21,6 +21,7 @@ def send_file(conn: socket, username, source_file_name):
     conn.recv(1024).decode(format)
 
     os.chdir(client_path + "\Resource")
+    #changes the current working directory to the given path.It returns None in all the cases.
 
     # Get file size and send it to server
     file_size = os.path.getsize(source_file_name)

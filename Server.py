@@ -12,7 +12,7 @@ server_path = os.getcwd()
 
 format = "utf8"
 
-HOST = "10.126.2.104"
+HOST = "127.0.0.1"
 PORT = 50007
 
 
@@ -212,7 +212,7 @@ def handleClient(conn: socket, address, index):
                         [
                             ("name", i),
                             ("id", i.split(".")[0]),
-                            ("path", f"{os.getcwd()}/{i}"),
+                            ("path", f"{os.getcwd()}/ServerResource/{username}/{i}"),
                         ]
                     )
                 )
