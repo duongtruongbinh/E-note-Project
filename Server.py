@@ -64,9 +64,9 @@ def sign_up(name, password):
 
 def send_list_file(conn: socket, username):
     # Check folder exist if not create folder with username
-    if os.path.isdir(f"{server_path}\ServerResource{username}") == False:
-        os.mkdir(f"{server_path}\ServerResource{username}")
-    os.chdir(f"ServerResource{username}")
+    if os.path.isdir(f"{server_path}\ServerResource\{username}") == False:
+        os.mkdir(f"{server_path}\ServerResource\{username}")
+    os.chdir(f"ServerResource\{username}")
 
     # List all file has been saved
     list_of_file = os.listdir()
