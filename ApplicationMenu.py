@@ -60,14 +60,18 @@ def receive_file(conn: socket, username, file_name):
 
 
 def receive_list_file(conn: socket):
-    list_of_file = []
+    
+    sstring = ""
     while True:
         file_name = conn.recv(1024).decode(format)
-        conn.send("x".encode(format))  # Receive and send one by one
-        if file_name == "Stop":
+        sstring += file_name
+        if  "Stop" in file_name:
             break
-        else:
-            list_of_file.append(file_name)
+        # Receive and send one by one
+        
+
+    list_of_file=sstring.split("<!!>")
+    list_of_file.pop()
     return list_of_file
 
 

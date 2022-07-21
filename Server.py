@@ -12,7 +12,7 @@ server_path = os.getcwd()
 
 format = "utf8"
 
-HOST = "127.0.0.1"
+HOST = "10.123.0.169"
 PORT = 50007
 
 
@@ -64,9 +64,9 @@ def sign_up(name, password):
 
 def send_list_file(conn: socket, username):
     # Check folder exist if not create folder with username
-    if os.path.isdir(f"{server_path}\ServerResource\{username}") == False:
-        os.mkdir(f"{server_path}\ServerResource\{username}")
-    os.chdir(f"ServerResource\{username}")
+    if os.path.isdir(f"{server_path}\ServerResource{username}") == False:
+        os.mkdir(f"{server_path}\ServerResource{username}")
+    os.chdir(f"ServerResource{username}")
 
     # List all file has been saved
     list_of_file = os.listdir()
@@ -74,10 +74,10 @@ def send_list_file(conn: socket, username):
 
     # Send list file to client
     for i in list_of_file:
-        conn.send(i.encode(format))
-        conn.recv(1024).decode(format)
+        sstring = i + "<!!>" 
+        conn.send(sstring.encode(format))
+
     conn.send("Stop".encode(format))
-    conn.recv(1024).decode(format)
 
 
 def receive_file(conn: socket):

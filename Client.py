@@ -5,7 +5,7 @@ import ApplicationMenu
 
 format = "utf8"
 
-HOST = "127.0.0.1"
+HOST = "10.123.0.169"
 PORT = 50007
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
