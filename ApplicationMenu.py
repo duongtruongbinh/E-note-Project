@@ -5,11 +5,11 @@ import os
 from ctypes import windll
 import shutil
 
-windll.shcore.SetProcessDpiAwareness(1) #cho phep dieu chinh font chu
+windll.shcore.SetProcessDpiAwareness(1)  # Increase the dpi of the window
 
 format = "utf8"
 
-client_path = os.getcwd() # returns current working directory of a process.
+client_path = os.getcwd()  # returns current working directory of a process.
 
 CHUNK_SIZE = 1024 * 10  # 10KB
 
@@ -21,7 +21,7 @@ def send_file(conn: socket, username, source_file_name):
     conn.recv(1024).decode(format)
 
     os.chdir(client_path + "\Resource")
-    #changes the current working directory to the given path.It returns None in all the cases.
+    # changes the current working directory to the given path.It returns None in all the cases.
 
     # Get file size and send it to server
     file_size = os.path.getsize(source_file_name)
@@ -60,17 +60,15 @@ def receive_file(conn: socket, username, file_name):
 
 
 def receive_list_file(conn: socket):
-    
     sstring = ""
     while True:
         file_name = conn.recv(1024).decode(format)
         sstring += file_name
-        if  "Stop" in file_name:
+        if "Stop" in file_name:
             break
         # Receive and send one by one
-        
 
-    list_of_file=sstring.split("<!!>")
+    list_of_file = sstring.split("<!!>")
     list_of_file.pop()
     return list_of_file
 
@@ -186,6 +184,9 @@ def Menu(username, conn: socket):
             window["-FileList-"].update(values=list_of_file)
 
         if event == "-Open-":
+            if not (window["-FileList-"].get()):
+                sg.popup("Please select a file")
+                continue
             file_name = window["-FileList-"].get()[0]
 
             conn.send("Download".encode(format))
@@ -206,6 +207,9 @@ def Menu(username, conn: socket):
                 subprocess.run(cmd, shell=True)
 
         if event == "-Download-":
+            if not (window["-FileList-"].get()):
+                sg.popup("Please select a file")
+                continue
             file_name = window["-FileList-"].get()[0]
 
             conn.send("Download".encode(format))
@@ -221,6 +225,9 @@ def Menu(username, conn: socket):
 
         if event == "-Upload-":
             # Get the file path and file name
+            if not (window["-FilePath-"].get()):
+                sg.popup("Please select a file")
+                continue
             file_path = window["-FilePath-"].get()
             file_name = file_path.split("/")[-1]
 

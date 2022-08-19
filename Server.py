@@ -1,4 +1,3 @@
-from multiprocessing import RLock
 from posixpath import split, splitext
 import socket
 import threading
@@ -7,12 +6,11 @@ import os
 
 CHUNK_SIZE = 1024 * 10
 
-
 server_path = os.getcwd()
 
 format = "utf8"
 
-HOST = "10.123.0.169"
+HOST = "127.0.0.1"
 PORT = 50007
 
 
@@ -35,7 +33,6 @@ def sign_in(username, password):
         i += 1
     return False
 
-
 def validate_name(name, password):
     with open("User/User.json", "r") as json_file:
         data = json.loads(json_file.read())
@@ -46,7 +43,6 @@ def validate_name(name, password):
             return False
         i += 1
     return True
-
 
 def sign_up(name, password):
     if validate_name(name, password) == False:
@@ -74,7 +70,7 @@ def send_list_file(conn: socket, username):
 
     # Send list file to client
     for i in list_of_file:
-        sstring = i + "<!!>" 
+        sstring = i + "<!!>"
         conn.send(sstring.encode(format))
 
     conn.send("Stop".encode(format))
@@ -136,7 +132,6 @@ def send_file(conn: socket):
 
 def handleClient(conn: socket, address, index):
     print(f"[NEW CONNECTION] {address} connected.")
-    lock = RLock()
 
     # Verify login and sign up
     username = ""
@@ -264,7 +259,6 @@ def main():
     print("Server closed")
 
     s.close()
-
 
 if __name__ == "__main__":
     main()
